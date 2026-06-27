@@ -1082,8 +1082,8 @@ function processBeat(b, sc) {
   if (b.t==='SC') { showSceneLabel(b.v); nextBeat(); }
   else if (b.t==='N') { pushHistory('narr',b.v); showNarration(b.v); setNext(()=>{ hideNarration(); nextBeat(); }); }
   else if (b.t==='T') { pushHistory('thought',b.v); showThought(b.v); setNext(()=>{ hideThought(); nextBeat(); }); }
-  else if (b.t==='K') { pushHistory('nagi',b.v,b.bug); setCharMode(b.bug?'bug':'nagi'); typeText(b.v,()=>setNext(()=>nextBeat())); }
-  else if (b.t==='P') { pushHistory('me',b.v); setCharMode('me'); typeText(b.v,()=>setNext(()=>nextBeat())); }
+  else if (b.t==='K') { pushHistory('nagi',b.v,b.bug); setCharMode(b.bug?'bug':'nagi'); document.getElementById('dlgbox').classList.add('show'); typeText(b.v,()=>setNext(()=>nextBeat())); }
+  else if (b.t==='P') { pushHistory('me',b.v); setCharMode('me'); document.getElementById('dlgbox').classList.add('show'); typeText(b.v,()=>setNext(()=>nextBeat())); }
   else if (b.t==='B') {
     G.bug=b; flashBug(b.name);
     if(G.design) showDesignPanel(b);
@@ -1131,6 +1131,7 @@ function skipType() {
 }
 
 function showNarration(text) {
+  document.getElementById('dlg-text').textContent = '';
   document.getElementById('narr-overlay').textContent = text;
   document.getElementById('narr-overlay').classList.add('show');
   document.getElementById('dlgbox').classList.remove('show');
@@ -1138,9 +1139,9 @@ function showNarration(text) {
 }
 function hideNarration() {
   document.getElementById('narr-overlay').classList.remove('show');
-  document.getElementById('dlgbox').classList.add('show');
 }
 function showThought(text) {
+  document.getElementById('dlg-text').textContent = '';
   document.getElementById('thought-overlay').textContent = '（'+text+'）';
   document.getElementById('thought-overlay').classList.add('show');
   document.getElementById('dlgbox').classList.remove('show');
@@ -1148,7 +1149,6 @@ function showThought(text) {
 }
 function hideThought() {
   document.getElementById('thought-overlay').classList.remove('show');
-  document.getElementById('dlgbox').classList.add('show');
 }
 function showSceneLabel(text) {
   const el = document.getElementById('scene-overlay');
