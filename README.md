@@ -568,6 +568,16 @@ const S = {
       {t:'G'}
     ],next:'s34rw'
   },
+  money_skip1:{
+    beats:[
+      {t:'P',v:'其实今天本来想请你的。'},
+      {t:'K',v:'真的吗？'},
+      {t:'P',v:'嗯。'},
+      {t:'P',v:'不过还是算了。月底了，最近花得有点快。'},
+      {t:'K',v:'没关系。反正只是随便开的玩笑。直播的时候，偶尔也会有人请咖啡。'},
+      {t:'G'}
+    ],next:'s34rw'
+  },
   s34rw:{
     beats:[
       {t:'P',v:'那你这次直播会播到几点？'},
@@ -654,6 +664,13 @@ const S = {
       {t:'G'}
     ],next:'s35rw'
   },
+  money_skip2:{
+    beats:[
+      {t:'K',v:'其实也差不多。'},
+      {t:'K',v:'穿什么都一样。'},
+      {t:'G'}
+    ],next:'s35rw'
+  },
   s35rw:{
     beats:[
       {t:'K',v:'不过，我刚刚那句话，是认真的。'},
@@ -717,6 +734,12 @@ const S = {
     beats:[
       {t:'N',v:'信用卡额度超限，备用信用已自动启用。'},
       {t:'K',v:'……谢谢。'},
+      {t:'G'}
+    ],next:'s36rw'
+  },
+  money_skip3:{
+    beats:[
+      {t:'K',v:'其实我本来也没想收。'},
       {t:'G'}
     ],next:'s36rw'
   },
@@ -787,6 +810,15 @@ const S = {
       {t:'P',v:'哪块？'},
       {t:'K',v:'Rolexx。不过怎么可能，只是随便说说。'},
       {t:'SHOP',stage:4,total:6900,isFinal:true,skipScene:'s37rw',ach:null,achDesc:null}
+    ],next:'s37rw'
+  },
+  money_skip4:{
+    beats:[
+      {t:'K',v:'我还以为。'},
+      {t:'N',v:'停顿。'},
+      {t:'K',v:'算了。'},
+      {t:'T',v:'空气安静了一瞬。你却不知道为什么，心里反而更乱了。'},
+      {t:'G'}
     ],next:'s37rw'
   },
   s37rw:{
@@ -1303,16 +1335,24 @@ const RECEIPT_HTML = {
   bank: ()=>`<img src="receipts/06_bank_statement.png" style="max-width:340px;max-height:560px;display:block;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.6)">`
 };
 
+const SHOP_LABELS = {
+  1:{name:'CAFÉ MOMENT', item:'Americano + Extra Shot', price:'£5.00',   btn:'Pay £5.00'},
+  2:{name:'URBAN STYLE', item:'Limited Hoodie (M)',     price:'£72.00',  btn:'Buy £72'},
+  3:{name:'LUMIÈRE',     item:'18K Gold Pendant',       price:'£578.00', btn:'Buy for Nagi £578'},
+  4:{name:'ROLEXX',      item:'Oyster Perpetual 41mm',  price:'£6,900',  btn:'Confirm £6,900'}
+};
+
 function showShopPopup(b) {
-  const fn = RECEIPT_HTML[b.stage] || RECEIPT_HTML.bank;
-  document.getElementById('rcpt-content').innerHTML = fn(b);
+  const info = SHOP_LABELS[b.stage] || {};
+  document.getElementById('rcpt-content').innerHTML = `
+    <div style="text-align:center;color:#d8e8ff;padding:32px 28px 20px;font-family:monospace;min-width:280px">
+      <div style="font-size:10px;letter-spacing:0.22em;color:rgba(180,200,255,0.5);margin-bottom:10px">${info.name||''}</div>
+      <div style="font-size:13px;color:rgba(200,215,255,0.6);margin-bottom:18px">${info.item||''}</div>
+      <div style="font-size:44px;font-weight:900;letter-spacing:-0.02em;color:#d8e8ff;margin-bottom:6px">${info.price||''}</div>
+    </div>`;
   const btns = document.getElementById('rcpt-btns');
-  if (b.stage === 'bank') { btns.style.display='none'; }
-  else {
-    btns.style.display='flex';
-    const labels = {1:'Pay £5.00', 2:'Buy £72', 3:'Buy for Nagi £578', 4:'Confirm £6,900'};
-    document.getElementById('rcpt-pay-btn').textContent = labels[b.stage] || 'Pay';
-  }
+  btns.style.display = 'flex';
+  document.getElementById('rcpt-pay-btn').textContent = info.btn || 'Pay';
   document.getElementById('receipt-popup').classList.add('show');
   document.getElementById('dlgbox').classList.remove('show');
   setBtnNext(false);
@@ -1325,28 +1365,44 @@ function closeShop() {
 
 function doShopBuy() {
   const b = G.shopCurrent;
+  // 更新消费数据
   G.money.total += b.total;
   G.money.purchases.push({stage:b.stage, total:b.total});
-  closeShop();
   const pill = document.getElementById('spend-pill');
   pill.style.display = 'inline';
-  pill.textContent = '💳 £'+G.money.total.toLocaleString();
+  pill.textContent = '💳 £' + G.money.total.toLocaleString();
   if (G.money.total >= 500) pill.classList.add('warn');
+
+  // 付款成功 → 弹出收据图
+  const fn = RECEIPT_HTML[b.stage];
+  document.getElementById('rcpt-content').innerHTML = fn ? fn() : '';
+  document.getElementById('rcpt-btns').style.display = 'none';
+  // 加点击提示
+  const hint = document.createElement('div');
+  hint.style.cssText = 'text-align:center;font-size:10px;color:rgba(180,180,180,0.45);font-family:monospace;letter-spacing:0.12em;margin-top:12px;padding-bottom:8px';
+  hint.textContent = 'tap to continue';
+  document.getElementById('rcpt-content').appendChild(hint);
+
   const continueAfterAch = () => {
-    if (b.isFinal) { setTimeout(()=>showBankStatement(), 600); }
+    if (b.isFinal) { setTimeout(()=>showBankStatement(), 400); }
     else { const sc='money_buy'+b.stage; if(S[sc]) loadScene(sc); else nextBeat(); }
   };
-  if (b.ach) unlockAchievementThen(b.ach, continueAfterAch);
-  else continueAfterAch();
+  const afterReceipt = () => {
+    closeShop();
+    if (b.ach) unlockAchievementThen(b.ach, continueAfterAch);
+    else continueAfterAch();
+  };
+  // 点击任意处继续
+  setBtnNext(true);
+  setNext(afterReceipt);
 }
 
 function doShopSkip() {
   const b = G.shopCurrent;
   closeShop();
-  const target = b.skipScene || 's310';
-  if (b.stage === 1) { loadScene(target); return; }
   G.moneyRefusals++;
-  const doSkip = ()=>loadScene(target);
+  const skipScene = 'money_skip' + b.stage;
+  const doSkip = ()=>loadScene(S[skipScene] ? skipScene : (b.skipScene || 's310'));
   if (b.isFinal || G.moneyRefusals >= 2) unlockAchievementThen('STAYING CLEAR-HEADED', doSkip);
   else doSkip();
 }
